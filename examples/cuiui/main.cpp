@@ -7,6 +7,8 @@
 
 #include <glad/glad.h>
 
+#include "math/types.hpp"
+
 int main() {
     auto ui_ctx = cuiui::UiContext();
 
@@ -14,8 +16,8 @@ int main() {
     using Clock   = std::chrono::high_resolution_clock;
     auto prev_now = Clock::now();
 
-    auto     prev_title_update_time = prev_now;
-    uint64_t frames_since_last      = 0;
+    auto prev_title_update_time = prev_now;
+    u64  frames_since_last      = 0;
 
     std::string subwindow_id_string = "sub";
 
