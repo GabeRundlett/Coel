@@ -1,25 +1,53 @@
 cmake_minimum_required(VERSION 3.21)
 project(coel VERSION 0.1.0)
-
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
-
-add_library(coel "src/coel.cpp")
+add_library(coel "src/opengl/context.cpp")
 add_library(coel::coel ALIAS coel)
 target_compile_features(coel PUBLIC cxx_std_20)
-if(BUILD_SHARED_LIBS AND CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    target_compile_definitions(coel
-        PRIVATE "COEL_EXPORT=__declspec(dllexport)"
-        INTERFACE "COEL_EXPORT=__declspec(dllimport)")
+
+# API selection
+set(COEL_NATIVE_APIS NULL X11 WIN32)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(COEL_NATIVE_API COEL_NATIVE_API_X11)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(COEL_NATIVE_API COEL_NATIVE_API_WIN32)
+endif()
+foreach(NATIVE_API_NAME ${COEL_NATIVE_APIS})
+    if(COEL_NATIVE_API STREQUAL "COEL_NATIVE_API_${NATIVE_API_NAME}")
+        set(COEL_USE_${NATIVE_API_NAME} 1)
+        target_compile_definitions(coel PUBLIC COEL_USE_${NATIVE_API_NAME}=1)
+    else()
+        set(COEL_USE_${NATIVE_API_NAME} 0)
+        target_compile_definitions(coel PUBLIC COEL_USE_${NATIVE_API_NAME}=0)
+    endif()
+endforeach()
+if(COEL_USE_X11)
+    target_link_libraries(coel PUBLIC X11 GL ${CMAKE_DL_LIBS})
+endif()
+
+# Build options
+if(BUILD_SHARED_LIBS)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        target_link_libraries(coel PRIVATE opengl32)
+        target_compile_definitions(coel
+            PRIVATE "COEL_EXPORT=__declspec(dllexport)"
+            INTERFACE "COEL_EXPORT=__declspec(dllimport)")
+    else()
+        target_compile_definitions(coel
+            PUBLIC "COEL_EXPORT=")
+    endif()
 else()
     target_compile_definitions(coel
-        PUBLIC "COEL_EXPORT=__declspec(dllexport)")
+        PUBLIC "COEL_EXPORT=")
 endif()
+
 target_include_directories(coel PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
+# Packaging
 file(WRITE ${CMAKE_BINARY_DIR}/config.cmake.in [=[
 @PACKAGE_INIT@
 include(${CMAKE_CURRENT_LIST_DIR}/coel-targets.cmake)
@@ -33,14 +61,12 @@ write_basic_package_version_file(
     ${CMAKE_CURRENT_BINARY_DIR}/coel-config-version.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion)
-
 install(
     FILES
         ${CMAKE_CURRENT_BINARY_DIR}/coel-config.cmake
         ${CMAKE_CURRENT_BINARY_DIR}/coel-config-version.cmake
     DESTINATION
         ${CMAKE_INSTALL_DATADIR}/coel)
-
 install(TARGETS coel EXPORT coel-targets)
 install(EXPORT coel-targets DESTINATION ${CMAKE_INSTALL_DATADIR}/coel NAMESPACE coel::)
 install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/ TYPE INCLUDE)

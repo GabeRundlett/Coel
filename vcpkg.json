@@ -2,5 +2,7 @@
     "name": "coel",
     "version": "0.1.0",
     "description": "Coel C++ App library",
-    "homepage": "https://github.com/GabeRundlett/coel"
+    "homepage": "https://github.com/GabeRundlett/coel",
+    "dependencies": [
+    ]
 }
