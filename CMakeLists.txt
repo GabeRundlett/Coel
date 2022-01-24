@@ -2,9 +2,26 @@ cmake_minimum_required(VERSION 3.21)
 project(coel VERSION 0.1.0)
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
-add_library(coel "src/opengl/context.cpp")
+add_library(coel
+    "src/opengl/context.cpp"
+    
+    "src/vulkan/core.cpp"
+    "src/vulkan/instance.cpp"
+    "src/vulkan/device.cpp"
+    "src/vulkan/surface.cpp"
+    "src/vulkan/swapchain.cpp"
+    "src/vulkan/pipeline.cpp"
+    "src/vulkan/buffer.cpp"
+)
 add_library(coel::coel ALIAS coel)
 target_compile_features(coel PUBLIC cxx_std_20)
+
+find_package(glslang CONFIG REQUIRED)
+find_package(volk CONFIG REQUIRED)
+target_link_libraries(coel PUBLIC
+    volk::volk
+    HLSL SPIRV glslang OGLCompiler
+)
 
 # API selection
 set(COEL_NATIVE_APIS NULL X11 WIN32)
@@ -23,7 +40,11 @@ foreach(NATIVE_API_NAME ${COEL_NATIVE_APIS})
     endif()
 endforeach()
 if(COEL_USE_X11)
+    target_compile_definitions(coel PUBLIC VK_USE_PLATFORM_XLIB_KHR)
     target_link_libraries(coel PUBLIC X11 GL ${CMAKE_DL_LIBS})
+endif()
+if(COEL_USE_WIN32)
+    target_compile_definitions(coel PUBLIC VK_USE_PLATFORM_WIN32_KHR)
 endif()
 
 # Build options

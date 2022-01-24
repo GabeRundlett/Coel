@@ -19,7 +19,7 @@ namespace coel::opengl {
 namespace coel::opengl {
     using WindowHandle = ::Window;
     struct NativeContextState {
-        Display * display;
+        Display *display;
         GLXContext glx_context;
         ::Window xid;
     };
