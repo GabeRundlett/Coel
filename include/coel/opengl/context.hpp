@@ -1,8 +1,6 @@
 #pragma once
 
 #if COEL_USE_WIN32
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
 #include <Windows.h>
 namespace coel::opengl {
     using WindowHandle = HWND;

@@ -46,7 +46,7 @@ if(COEL_USE_X11)
     target_link_libraries(coel PUBLIC X11 GL ${CMAKE_DL_LIBS})
 endif()
 if(COEL_USE_WIN32)
-    target_compile_definitions(coel PUBLIC VK_USE_PLATFORM_WIN32_KHR)
+    target_compile_definitions(coel PUBLIC VK_USE_PLATFORM_WIN32_KHR WIN32_LEAN_AND_MEAN NOMINMAX)
 endif()
 
 # Build options

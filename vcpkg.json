@@ -4,5 +4,7 @@
     "description": "Coel C++ App library",
     "homepage": "https://github.com/GabeRundlett/coel",
     "dependencies": [
+        "volk",
+        "glslang"
     ]
 }

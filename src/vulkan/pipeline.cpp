@@ -1,4 +1,3 @@
-#define NOMINMAX
 #include <coel/vulkan/core.hpp>
 
 #include <glslang/Public/ShaderLang.h>
