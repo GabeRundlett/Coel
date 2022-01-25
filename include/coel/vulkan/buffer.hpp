@@ -11,6 +11,7 @@ namespace coel::vulkan {
 
         COEL_EXPORT Buffer(VkDevice device, VkPhysicalDeviceMemoryProperties vk_memory_properties, void *data_ptr, size_t data_size, VkBufferUsageFlags usage);
         COEL_EXPORT ~Buffer();
+        COEL_EXPORT void upload(void *data_ptr, size_t data_size);
         COEL_EXPORT void bind_vbo(VkCommandBuffer cmd);
         COEL_EXPORT void bind_ibo(VkCommandBuffer cmd);
     };

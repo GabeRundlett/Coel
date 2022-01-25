@@ -7,6 +7,7 @@ namespace coel::vulkan {
     using PhysicalDevice = VkPhysicalDevice;
     COEL_EXPORT PhysicalDevice choose_physical_device(VkInstance instance);
     COEL_EXPORT uint32_t select_graphics_and_present_queue(VkPhysicalDevice physical_device, VkSurfaceKHR surface);
+    COEL_EXPORT VkPhysicalDeviceMemoryProperties get_physical_device_memory_properties(VkPhysicalDevice physical_device);
 
     struct Device {
         VkInstance instance_handle;

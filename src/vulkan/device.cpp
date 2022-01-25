@@ -38,6 +38,12 @@ namespace coel::vulkan {
         return vk_queue_family_index;
     }
 
+    VkPhysicalDeviceMemoryProperties get_physical_device_memory_properties(VkPhysicalDevice physical_device) {
+        VkPhysicalDeviceMemoryProperties result;
+        vkGetPhysicalDeviceMemoryProperties(physical_device, &result);
+        return result;
+    }
+
     Device::Device(VkInstance instance, VkPhysicalDevice physical_device, const std::vector<uint32_t> &queue_family_indices) {
         instance_handle = instance;
 

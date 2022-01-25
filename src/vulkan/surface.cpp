@@ -3,6 +3,7 @@
 namespace coel::vulkan {
     Surface::Surface(VkInstance instance, WindowHandle window) {
         instance_handle = instance;
+        window_handle = window;
 
 #if COEL_USE_WIN32
         VkWin32SurfaceCreateInfoKHR surface_ci{
@@ -10,7 +11,7 @@ namespace coel::vulkan {
             .pNext = nullptr,
             .flags = 0,
             .hinstance = GetModuleHandleA(nullptr),
-            .hwnd = window,
+            .hwnd = window_handle,
         };
         vkCreateWin32SurfaceKHR(instance_handle, &surface_ci, nullptr, &handle);
 #elif COEL_USE_X11
@@ -19,7 +20,7 @@ namespace coel::vulkan {
             .pNext = nullptr,
             .flags = 0,
             .dpy = nullptr,
-            .window = window,
+            .window = window_handle,
         };
         vkCreateXlibSurfaceKHR(instance_handle, &surface_ci, nullptr, &handle);
 #endif
@@ -30,6 +31,19 @@ namespace coel::vulkan {
             return;
         vkDestroySurfaceKHR(instance_handle, handle, nullptr);
         handle = nullptr;
+    }
+
+    Surface &Surface::operator=(Surface &&other) {
+        if (handle)
+            vkDestroySurfaceKHR(instance_handle, handle, nullptr);
+        instance_handle = other.instance_handle;
+        window_handle = other.window_handle;
+        handle = other.handle;
+        format = other.format;
+        other.instance_handle = nullptr;
+        other.handle = nullptr;
+        other.format = {};
+        return *this;
     }
 
     void Surface::select_format(VkPhysicalDevice physical_device) {

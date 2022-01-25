@@ -6,8 +6,9 @@
 namespace coel::vulkan {
     struct Surface {
         VkInstance instance_handle;
+        WindowHandle window_handle;
 
-        VkSurfaceKHR handle;
+        VkSurfaceKHR handle = nullptr;
         VkSurfaceFormatKHR format;
 
         COEL_EXPORT Surface() = default;
@@ -19,15 +20,7 @@ namespace coel::vulkan {
         Surface(Surface &&other) {
             *this = std::move(other);
         }
-        Surface &operator=(Surface &&other) {
-            instance_handle = other.instance_handle;
-            handle = other.handle;
-            format = other.format;
-            other.instance_handle = nullptr;
-            other.handle = nullptr;
-            other.format = {};
-            return *this;
-        }
+        COEL_EXPORT Surface &operator=(Surface &&other);
 
         COEL_EXPORT void select_format(VkPhysicalDevice physical_device);
     };

@@ -12,6 +12,8 @@ add_library(coel
     "src/vulkan/swapchain.cpp"
     "src/vulkan/pipeline.cpp"
     "src/vulkan/buffer.cpp"
+    "src/vulkan/image.cpp"
+    "src/vulkan/command.cpp"
 )
 add_library(coel::coel ALIAS coel)
 target_compile_features(coel PUBLIC cxx_std_20)
@@ -73,6 +75,8 @@ file(WRITE ${CMAKE_BINARY_DIR}/config.cmake.in [=[
 @PACKAGE_INIT@
 include(${CMAKE_CURRENT_LIST_DIR}/coel-targets.cmake)
 check_required_components(coel)
+find_package(glslang CONFIG REQUIRED)
+find_package(volk CONFIG REQUIRED)
 ]=])
 configure_package_config_file(${CMAKE_BINARY_DIR}/config.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/coel-config.cmake

@@ -118,8 +118,8 @@ namespace coel::vulkan {
         const VkPipelineLayoutCreateInfo pipeline_layout_ci = {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .pNext = nullptr,
-            .setLayoutCount = 0,
-            .pSetLayouts = nullptr,
+            .setLayoutCount = static_cast<uint32_t>(config.descriptor_set_layouts.size()),
+            .pSetLayouts = config.descriptor_set_layouts.data(),
         };
         vkCreatePipelineLayout(config.device_handle, &pipeline_layout_ci, nullptr, &layout);
         constexpr auto NUM_DYNAMIC_STATES = 2;

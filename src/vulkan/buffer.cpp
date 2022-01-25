@@ -1,7 +1,7 @@
 #include <coel/vulkan/core.hpp>
 
 namespace coel::vulkan {
-    static bool memory_type_from_properties(auto &memory_properties, uint32_t typeBits, VkFlags requirements_mask, uint32_t *typeIndex) {
+    static bool memory_type_from_properties(const auto &memory_properties, uint32_t typeBits, VkFlags requirements_mask, uint32_t *typeIndex) {
         for (uint32_t i = 0; i < VK_MAX_MEMORY_TYPES; i++) {
             if ((typeBits & 1) == 1) {
                 if ((memory_properties.memoryTypes[i].propertyFlags & requirements_mask) == requirements_mask) {
@@ -43,6 +43,13 @@ namespace coel::vulkan {
     Buffer::~Buffer() {
         vkDestroyBuffer(device_handle, handle, nullptr);
         vkFreeMemory(device_handle, memory, nullptr);
+    }
+
+    void Buffer::upload(void *data_ptr, size_t data_size) {
+        void *mapped_region;
+        vkMapMemory(device_handle, memory, 0, data_size, 0, &mapped_region);
+        memcpy(mapped_region, data_ptr, data_size);
+        vkUnmapMemory(device_handle, memory);
     }
 
     void Buffer::bind_vbo(VkCommandBuffer cmd) {

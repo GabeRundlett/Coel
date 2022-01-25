@@ -9,3 +9,5 @@
 #include <coel/vulkan/swapchain.hpp>
 #include <coel/vulkan/pipeline.hpp>
 #include <coel/vulkan/buffer.hpp>
+#include <coel/vulkan/image.hpp>
+#include <coel/vulkan/command.hpp>

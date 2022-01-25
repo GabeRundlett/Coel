@@ -19,6 +19,7 @@ namespace coel::vulkan {
             const char *const frag_src;
             std::vector<VkVertexInputBindingDescription> bindings;
             std::vector<VkVertexInputAttributeDescription> attribs;
+            std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
         };
 
         COEL_EXPORT GraphicsPipeline(const Config &config);

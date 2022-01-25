@@ -7,12 +7,12 @@ namespace coel::vulkan {
         recreate_cleanup();
         VkSwapchainKHR old_swapchain = handle;
         VkSurfaceCapabilitiesKHR surface_capabilities;
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_handle, surface_handle, &surface_capabilities);
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_handle, surface.handle, &surface_capabilities);
         uint32_t present_mode_count;
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device_handle, surface_handle, &present_mode_count, nullptr);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device_handle, surface.handle, &present_mode_count, nullptr);
         std::vector<VkPresentModeKHR> present_modes;
         present_modes.resize(present_mode_count);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device_handle, surface_handle, &present_mode_count, present_modes.data());
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device_handle, surface.handle, &present_mode_count, present_modes.data());
         VkExtent2D swapchain_extent;
         if (surface_capabilities.currentExtent.width == 0xFFFFFFFF) {
             swapchain_extent.width = size_x;
@@ -62,10 +62,10 @@ namespace coel::vulkan {
         VkSwapchainCreateInfoKHR swapchain_ci = {
             .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
             .pNext = nullptr,
-            .surface = surface_handle,
+            .surface = surface.handle,
             .minImageCount = desired_image_n,
-            .imageFormat = surface_format.format,
-            .imageColorSpace = surface_format.colorSpace,
+            .imageFormat = surface.format.format,
+            .imageColorSpace = surface.format.colorSpace,
             .imageExtent = {
                 .width = swapchain_extent.width,
                 .height = swapchain_extent.height,
@@ -96,7 +96,7 @@ namespace coel::vulkan {
                 .pNext = nullptr,
                 .flags = 0,
                 .viewType = VK_IMAGE_VIEW_TYPE_2D,
-                .format = surface_format.format,
+                .format = surface.format.format,
                 .components = {
                     .r = VK_COMPONENT_SWIZZLE_IDENTITY,
                     .g = VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -132,7 +132,7 @@ namespace coel::vulkan {
             const VkAttachmentDescription attachments[1] = {
                 {
                     .flags = 0,
-                    .format = surface_format.format,
+                    .format = surface.format.format,
                     .samples = VK_SAMPLE_COUNT_1_BIT,
                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                     .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
@@ -208,6 +208,7 @@ namespace coel::vulkan {
         }
 
         prepared = true;
+        resized_flag = true;
 
         VkImageView attachments[1];
         // attachments[1] = vk.swapchain.depth.view;
@@ -232,7 +233,7 @@ namespace coel::vulkan {
             vkDestroyFramebuffer(device_handle, image_resources[i].framebuffer, nullptr);
             vkDestroyImageView(device_handle, image_resources[i].view, nullptr);
             vkFreeCommandBuffers(device_handle, command_pool, 1, &image_resources[i].cmd);
-            
+
             image_resources[i].cmd_recorded = false;
 
             image_resources[i].framebuffer = VK_NULL_HANDLE;
@@ -241,15 +242,13 @@ namespace coel::vulkan {
         }
     }
 
-    Swapchain::Swapchain(VkPhysicalDevice physical_device, VkSurfaceKHR surface, VkSurfaceFormatKHR format, VkDevice device, uint32_t graphics_queue_family_index) {
+    Swapchain::Swapchain(VkPhysicalDevice physical_device, Surface &surface, VkDevice device, uint32_t graphics_queue_family_index) : surface(surface) {
         device_handle = device;
         handle = nullptr;
         render_pass = nullptr;
         size_x = 0, size_y = 0;
 
         physical_device_handle = physical_device;
-        surface_handle = surface;
-        surface_format = format;
 
         // Sync stuff
 
@@ -287,7 +286,7 @@ namespace coel::vulkan {
         if (!handle)
             return;
         recreate_cleanup();
-        if (render_pass) 
+        if (render_pass)
             vkDestroyRenderPass(device_handle, render_pass, nullptr);
 
         for (size_t i = 0; i < frames.size(); i++) {
@@ -298,6 +297,14 @@ namespace coel::vulkan {
         vkDestroyCommandPool(device_handle, command_pool, nullptr);
         vkDestroySwapchainKHR(device_handle, handle, nullptr);
         handle = nullptr;
+    }
+
+    bool Swapchain::was_resized() {
+        if (resized_flag) {
+            resized_flag = false;
+            return true;
+        }
+        return false;
     }
 
     void Swapchain::wait_for_frame() {
@@ -313,6 +320,9 @@ namespace coel::vulkan {
                 frames[current_frame_index].image_acquired_semaphore,
                 VK_NULL_HANDLE, &current_image_index);
             if (err == VK_ERROR_OUT_OF_DATE_KHR) {
+                recreate_swapchain();
+            } else if (err == VK_ERROR_SURFACE_LOST_KHR) {
+                surface = Surface(surface.instance_handle, surface.window_handle);
                 recreate_swapchain();
             } else if (err == VK_SUBOPTIMAL_KHR) {
                 break;
@@ -372,6 +382,16 @@ namespace coel::vulkan {
         current_frame_index += 1;
         current_frame_index %= FRAMES_N;
         if (err == VK_ERROR_OUT_OF_DATE_KHR) {
+            recreate_swapchain();
+        } else if (err == VK_SUBOPTIMAL_KHR) {
+            VkSurfaceCapabilitiesKHR surface_capabilities;
+            vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_handle, surface.handle, &surface_capabilities);
+            if (surface_capabilities.currentExtent.width != size_x ||
+                surface_capabilities.currentExtent.height != size_y) {
+                recreate_swapchain();
+            }
+        } else if (err == VK_ERROR_SURFACE_LOST_KHR) {
+            surface = Surface(surface.instance_handle, surface.window_handle);
             recreate_swapchain();
         } else if (err != VK_SUCCESS) {
             throw std::runtime_error("Unexpected swapchain present error");
