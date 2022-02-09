@@ -356,6 +356,11 @@ namespace coel::vulkan {
     }
 
     void Swapchain::present_and_swap(VkQueue present_queue) {
+        if (!image_resources[current_image_index].cmd_recorded) {
+            draw_cmd_func(image_resources[current_image_index].cmd);
+            image_resources[current_image_index].cmd_recorded = true;
+        }
+
         VkPipelineStageFlags pipe_stage_flags;
         VkSubmitInfo submit_info;
         submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;

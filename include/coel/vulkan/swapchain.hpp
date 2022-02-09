@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <vector>
 #include <array>
+#include <functional>
 
 namespace coel::vulkan {
     struct Swapchain {
@@ -17,6 +18,9 @@ namespace coel::vulkan {
         VkPresentModeKHR present_mode;
         VkCommandPool command_pool;
         VkRenderPass render_pass;
+
+        using DrawFunc = void(VkCommandBuffer);
+        std::function<DrawFunc> draw_cmd_func;
 
         uint32_t size_x, size_y;
         bool prepared, resized_flag;
