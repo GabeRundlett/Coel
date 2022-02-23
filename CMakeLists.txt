@@ -16,14 +16,36 @@ add_library(coel
     "src/vulkan/command.cpp"
 )
 add_library(coel::coel ALIAS coel)
-target_compile_features(coel PUBLIC cxx_std_20)
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    target_compile_options(coel PUBLIC /std:c++latest)
+else()
+    target_compile_features(coel PUBLIC cxx_std_20)
+endif()
+
+find_library(SHADERC_LIB shaderc)
+find_library(SHADERC_UTIL_LIB shaderc_util)
+find_path(SHADERC_INC "shaderc/shaderc.h")
+find_library(SPIRV_TOOLS_LIB SPIRV-Tools)
+find_library(SPIRV_TOOLS_LINK_LIB SPIRV-Tools-link)
+find_library(SPIRV_TOOLS_OPT_LIB SPIRV-Tools-opt)
+find_library(SPIRV_TOOLS_REDUCE_LIB SPIRV-Tools-reduce)
+find_library(SPIRV_TOOLS_SHARED_LIB SPIRV-Tools-shared)
 find_package(glslang CONFIG REQUIRED)
 find_package(volk CONFIG REQUIRED)
-target_link_libraries(coel PUBLIC
-    volk::volk
-    HLSL SPIRV glslang OGLCompiler
+target_link_libraries(coel
+    PUBLIC
+        volk::volk
+        HLSL SPIRV glslang OGLCompiler
+    PRIVATE
+        ${SHADERC_LIB} ${SHADERC_UTIL_LIB}
+        ${SPIRV_TOOLS_LIB}
+        ${SPIRV_TOOLS_LINK_LIB}
+        ${SPIRV_TOOLS_OPT_LIB}
+        ${SPIRV_TOOLS_REDUCE_LIB}
+        ${SPIRV_TOOLS_SHARED_LIB}
 )
+target_include_directories(coel PRIVATE ${SHADERC_INC})
 
 # API selection
 set(COEL_NATIVE_APIS NULL X11 WIN32)

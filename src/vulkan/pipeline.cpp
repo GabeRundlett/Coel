@@ -4,7 +4,11 @@
 #include <glslang/SPIRV/GlslangToSpv.h>
 
 #include <iostream>
+#include <fstream>
 
+#define USE_GLSLANG 1
+
+#if USE_GLSLANG
 constexpr TBuiltInResource DEFAULT_SHADER_RESOURCE_SIZES = TBuiltInResource{
     .maxLights = 32,
     .maxClipPlanes = 6,
@@ -110,6 +114,7 @@ constexpr TBuiltInResource DEFAULT_SHADER_RESOURCE_SIZES = TBuiltInResource{
         .generalConstantMatrixVectorIndexing = 1,
     },
 };
+#endif
 
 namespace coel::vulkan {
     GraphicsPipeline::GraphicsPipeline(const Config &config) {
@@ -189,9 +194,12 @@ namespace coel::vulkan {
         ms.pSampleMask = nullptr;
         ms.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
         auto prepare_shader_module = [](VkDevice device, const char *const code_str, EShLanguage stage) -> VkShaderModule {
+            std::vector<uint32_t> spv_binary;
+#if USE_GLSLANG            
             const char *shaderStrings[] = {code_str};
             glslang::TShader shader(stage);
             shader.setStrings(shaderStrings, 1);
+            // shader.setEnvInput(glslang::EShSourceHlsl, stage, glslang::EShClientVulkan, 1);
             auto messages = static_cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules);
             TBuiltInResource resource = DEFAULT_SHADER_RESOURCE_SIZES;
             if (!shader.parse(&resource, 100, false, messages)) {
@@ -204,16 +212,25 @@ namespace coel::vulkan {
                 std::cerr << shader.getInfoLog() << '\n'
                           << shader.getInfoDebugLog() << std::endl;
             }
-            std::vector<uint32_t> spv_binary;
             glslang::GlslangToSpv(*program.getIntermediate(stage), spv_binary);
-
+#else
+            auto inpath = std::string(stage == 0 ? "vert.spv" : "frag.spv");
+            std::ifstream infile(inpath, std::ios::in | std::ios::binary);
+            infile.unsetf(std::ios::skipws);
+            std::streampos filesize;
+            infile.seekg(0, std::ios::end);
+            filesize = infile.tellg();
+            infile.seekg(0, std::ios::beg);
+            spv_binary.resize(static_cast<size_t>(filesize) / sizeof(spv_binary[0]));
+            infile.read(reinterpret_cast<char*>(spv_binary.data()), filesize);
+#endif
             VkShaderModule module;
             VkShaderModuleCreateInfo moduleCreateInfo;
             moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
             moduleCreateInfo.pNext = nullptr;
             moduleCreateInfo.flags = 0;
-            moduleCreateInfo.codeSize = spv_binary.size() * sizeof(uint32_t);
-            moduleCreateInfo.pCode = spv_binary.data();
+            moduleCreateInfo.codeSize = spv_binary.size() * sizeof(spv_binary[0]);
+            moduleCreateInfo.pCode = reinterpret_cast<uint32_t*>(spv_binary.data());
             vkCreateShaderModule(device, &moduleCreateInfo, nullptr, &module);
             return module;
         };
